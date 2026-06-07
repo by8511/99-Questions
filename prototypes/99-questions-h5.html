@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>99个问题 · H5 MVP 原型</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --bg: #f6f6f7;
+      --surface: rgba(255, 255, 255, .84);
+      --surface-2: #ffffff;
+      --ink: #111111;
+      --muted: #777a80;
+      --line: rgba(17, 17, 17, .1);
+      --accent: #0a84ff;
+      --accent-soft: rgba(10, 132, 255, .12);
+      --danger: #ff3b30;
+      --green: #34c759;
+      --shadow: 0 22px 68px rgba(0, 0, 0, .08);
+      --radius: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); min-height: 100%; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% -8%, rgba(10,132,255,.12), transparent 22rem),
+        radial-gradient(circle at 94% 4%, rgba(0,0,0,.05), transparent 18rem),
+        linear-gradient(180deg, #fbfbfc 0%, var(--bg) 46%, #ffffff 100%);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .app {
+      width: min(430px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 12px 14px 100px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin: -12px -14px 12px;
+      padding: calc(12px + env(safe-area-inset-top)) 14px 10px;
+      background: rgba(246,246,247,.78);
+      backdrop-filter: blur(18px) saturate(1.25);
+      border-bottom: 1px solid rgba(255,255,255,.8);
+    }
+    .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: #111;
+      color: #fff;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+    .brand small, .eyebrow {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    .brand strong { display: block; font-size: 15px; line-height: 1.05; white-space: nowrap; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; animation: pageShift .34s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes pageShift { from { opacity: 0; transform: translateY(12px) scale(.985); filter: blur(4px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.82);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.18);
+    }
+    .hero {
+      min-height: calc(100vh - 160px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+      padding: 28px 22px;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(58px, 20vw, 88px);
+      line-height: .88;
+      letter-spacing: 0;
+    }
+    .hero p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1.55; }
+    .rules-button { border: 0; }
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .metric {
+      padding: 12px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .metric strong { display: block; font-size: 22px; }
+    .metric span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 800; }
+
+    .button {
+      min-height: 52px;
+      width: 100%;
+      border: 0;
+      border-radius: 18px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 0 18px;
+      font-weight: 920;
+      transition: transform .16s ease, opacity .16s ease;
+    }
+    .button:active { transform: scale(.98); }
+    .button.primary { background: var(--accent); color: #fff; box-shadow: 0 16px 38px rgba(10,132,255,.22); }
+    .button.dark { background: var(--ink); color: #fff; }
+    .button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+    .button.ghost { background: transparent; color: var(--accent); min-height: 38px; }
+    .button:disabled { opacity: .38; cursor: not-allowed; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+      margin: 20px 2px 12px;
+    }
+    .section-head h2 { margin: 0; font-size: 26px; letter-spacing: 0; }
+    .section-head span { color: var(--muted); font-size: 12px; font-weight: 850; }
+
+    .card { padding: 18px; border-radius: var(--radius); background: var(--surface); border: 1px solid rgba(255,255,255,.82); box-shadow: var(--shadow); }
+    .stack { display: grid; gap: 12px; }
+    .field { display: grid; gap: 7px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 850; }
+    .field input, .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 16px;
+      padding: 13px 14px;
+      outline: none;
+      resize: vertical;
+    }
+    .field input:focus, .field textarea:focus { border-color: rgba(10,132,255,.55); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .answer-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .answer-picker button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      font-weight: 900;
+    }
+    .answer-picker button.active { background: var(--ink); color: #fff; border-color: transparent; }
+    .error { color: var(--danger); font-size: 13px; font-weight: 850; min-height: 18px; }
+    .success { color: var(--green); font-size: 13px; font-weight: 850; }
+
+    .celebration {
+      min-height: calc(100vh - 160px);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      padding: 28px 22px;
+      text-align: center;
+    }
+    .celebration h2 { margin: 0; font-size: 42px; line-height: 1.05; }
+    .celebration p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 18px;
+      top: -30px;
+      border-radius: 3px;
+      left: var(--x, 50%);
+      background: var(--c, var(--accent));
+      animation: confettiFall var(--dur, 3.6s) ease-in-out 1 both;
+      animation-delay: var(--d, 0s);
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+      15% { opacity: 1; }
+      82% { opacity: 1; }
+      100% { transform: translateY(760px) rotate(540deg); opacity: 0; }
+    }
+
+    .progress-wrap { margin: 14px 0 12px; }
+    .progress-meta { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 850; }
+    .progress { height: 9px; border-radius: 999px; background: rgba(17,17,17,.08); overflow: hidden; }
+    .progress span { display: block; height: 100%; width: 0%; border-radius: 999px; background: var(--accent); transition: width .24s ease; }
+
+    .question-card { padding: 20px; }
+    .question-card h2 { margin: 8px 0 18px; font-size: 24px; line-height: 1.2; }
+    .option-list { display: grid; gap: 10px; }
+    .option {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      text-align: left;
+      color: var(--ink);
+    }
+    .option b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 12px; background: rgba(17,17,17,.06); }
+    .option.active { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .option.active b { background: var(--accent); color: #fff; }
+
+    .result-hero { padding: 22px; }
+    .score-ring {
+      width: 150px;
+      height: 150px;
+      margin: 8px auto 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--accent) var(--score, 76%), rgba(17,17,17,.08) 0);
+      position: relative;
+    }
+    .score-ring::after { content: ""; position: absolute; inset: 13px; border-radius: 50%; background: #fff; }
+    .score-ring strong { position: relative; z-index: 1; font-size: 42px; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .tag-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(17,17,17,.07);
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .analysis-copy { color: var(--muted); line-height: 1.65; font-size: 14px; }
+
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 5px; border-radius: 18px; background: rgba(17,17,17,.06); }
+    .tabs button { min-height: 38px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 900; }
+    .tabs button.active { background: #fff; color: var(--ink); box-shadow: 0 8px 20px rgba(0,0,0,.06); }
+    .rank-list, .admin-list, .profile-list { display: grid; gap: 9px; }
+    .row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 13px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .row-index { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 11px; background: rgba(17,17,17,.06); font-weight: 900; }
+    .row b { display: block; font-size: 14px; }
+    .row small { color: var(--muted); font-weight: 760; }
+    .row-action { display: flex; gap: 6px; }
+    .profile-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .mini {
+      min-height: 32px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 0;
+      background: rgba(10,132,255,.12);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .mini.danger { color: var(--danger); background: rgba(255,59,48,.1); }
+    .blurred-contact {
+      filter: blur(8px);
+      user-select: none;
+      color: transparent;
+      text-shadow: 0 0 12px rgba(17,17,17,.55);
+    }
+    .match-card { position: relative; overflow: hidden; }
+    .match-card::after {
+      content: "9.9元解锁";
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .poster-preview {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 48px rgba(0,0,0,.09);
+    }
+    canvas { display: block; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: end;
+      justify-content: center;
+      padding: 14px;
+      background: rgba(0,0,0,.32);
+    }
+    .modal.open { display: flex; }
+    .sheet {
+      width: min(430px, 100%);
+      border-radius: 28px;
+      padding: 18px;
+      background: rgba(255,255,255,.94);
+      box-shadow: 0 30px 90px rgba(0,0,0,.2);
+      backdrop-filter: blur(20px) saturate(1.16);
+      animation: sheet .2s ease both;
+    }
+    @keyframes sheet { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .sheet h3 { margin: 0 0 8px; font-size: 24px; }
+    .sheet p { margin: 0 0 14px; color: var(--muted); line-height: 1.5; }
+    .login-options { display: grid; gap: 9px; }
+    .contact-field { margin: 10px 0 12px; }
+    .quiz-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 88px;
+      z-index: 80;
+      transform: translateX(-50%);
+      width: min(360px, calc(100% - 32px));
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(17,17,17,.92);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 850;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 40;
+      width: min(390px, calc(100% - 24px));
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      padding: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 18px 52px rgba(0,0,0,.12);
+      backdrop-filter: blur(20px) saturate(1.2);
+    }
+    .bottom-nav button {
+      display: grid;
+      place-items: center;
+      min-height: 42px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 920;
+    }
+    .bottom-nav button.active { background: var(--ink); color: #fff; }
+
+    .hidden { display: none !important; }
+    @media (max-width: 360px) {
+      .app { padding-left: 10px; padding-right: 10px; }
+      .hero h1 { font-size: 52px; }
+      .bottom-nav { width: calc(100% - 16px); }
+      .bottom-nav button { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark">99</span>
+        <span><small>Question Test</small><strong>99个问题</strong></span>
+      </div>
+      <button class="pill rules-button" id="rulesButton" type="button">玩法规则</button>
+    </header>
+
+    <main>
+      <section class="view active" id="welcomeView">
+        <div class="hero panel">
+          <div>
+            <span class="eyebrow">MVP H5 Prototype</span>
+            <h1>99个<br />问题</h1>
+          </div>
+          <p>用100道题认识自己，也认识别人。先贡献一道题，再进入正式测试。</p>
+          <div class="hero-metrics">
+            <div class="metric"><strong>100</strong><span>随机题</span></div>
+            <div class="metric"><strong>1</strong><span>人格分析</span></div>
+            <div class="metric"><strong>周榜</strong><span>每周刷新</span></div>
+          </div>
+          <button class="button primary" type="button" id="homePrimary">开始</button>
+        </div>
+      </section>
+
+      <section class="view" id="createView">
+        <div class="section-head"><div><span class="eyebrow">Step 1</span><h2>创建一道题</h2></div><span>必须完成</span></div>
+        <form class="card stack" id="questionForm">
+          <div class="field"><label for="questionTitle">问题标题</label><textarea id="questionTitle" rows="3" placeholder="例如：你认为人生最重要的是什么？"></textarea></div>
+          <div class="field"><label>选项 A</label><input id="optionA" placeholder="金钱" /></div>
+          <div class="field"><label>选项 B</label><input id="optionB" placeholder="自由" /></div>
+          <div class="field"><label>选项 C</label><input id="optionC" placeholder="爱情" /></div>
+          <div class="field"><label>选项 D</label><input id="optionD" placeholder="成就" /></div>
+          <div class="field">
+            <label>题主答案</label>
+            <div class="answer-picker" id="authorAnswerPicker">
+              <button type="button" data-answer="A">A</button>
+              <button type="button" data-answer="B">B</button>
+              <button type="button" data-answer="C">C</button>
+              <button type="button" data-answer="D">D</button>
+            </div>
+          </div>
+          <div class="error" id="createError"></div>
+          <button class="button dark" type="submit">创建一道题</button>
+          <button class="button ghost" type="button" id="fillExample">填入示例</button>
+        </form>
+      </section>
+
+      <section class="view" id="celebrateView">
+        <div class="celebration panel">
+          <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+          <span class="eyebrow" id="reviewEyebrow">Ready</span>
+          <h2 id="reviewTitle">问题已创建</h2>
+          <p id="reviewCopy">你已经完成第一步。回到首页后，可以点击「开始正式答题」进入 100 题测试。</p>
+          <button class="button primary" type="button" id="beginQuiz">开始正式答题</button>
+        </div>
+      </section>
+
+      <section class="view" id="quizView">
+        <div class="progress-wrap">
+          <div class="progress-meta"><span id="questionIndex">第1题 / 100题</span><span id="savedCount">未注册不保存</span></div>
+          <div class="progress"><span id="progressBar"></span></div>
+        </div>
+        <article class="question-card card">
+          <span class="eyebrow" id="questionSource">Community Question</span>
+          <h2 id="quizTitle"></h2>
+          <div class="option-list" id="optionList"></div>
+        </article>
+        <div class="quiz-actions">
+          <button class="button secondary" type="button" id="saveQuiz">保存题目</button>
+          <button class="button primary" type="button" id="nextQuestion" disabled>下一题</button>
+        </div>
+        <div class="stack" style="margin-top: 12px;">
+          <button class="button secondary" type="button" id="finishNow">直接查看原型结果</button>
+        </div>
+      </section>
+
+      <section class="view" id="resultView">
+        <div class="section-head"><div><span class="eyebrow">Result</span><h2>测试结果</h2></div><span id="resultMeta">游客成绩</span></div>
+        <article class="result-hero card">
+          <div class="score-ring" id="scoreRing"><strong id="scoreText">78%</strong></div>
+          <div class="result-grid">
+            <div class="metric"><strong id="matchRate">65%</strong><span>大众一致率</span></div>
+            <div class="metric"><strong id="uniqueRate">92%</strong><span>独特指数</span></div>
+          </div>
+        </article>
+        <article class="card stack" style="margin-top: 12px;">
+          <div><span class="eyebrow">个人画像</span><div class="tag-row" id="profileTags"></div></div>
+          <div><span class="eyebrow">人格分析总结</span><p class="analysis-copy" id="analysisSummary"></p></div>
+          <button class="button primary" type="button" id="openPoster">生成分享卡片</button>
+          <button class="button secondary" type="button" id="saveResult">登录保存成绩</button>
+        </article>
+      </section>
+
+      <section class="view" id="leaderboardView">
+        <div class="section-head"><div><span class="eyebrow">Weekly Ranking</span><h2>周排行榜</h2></div><span>周一 00:00</span></div>
+        <div class="tabs" id="rankTabs">
+          <button class="active" data-rank="answer">答题榜</button>
+          <button data-rank="contribute">贡献榜</button>
+          <button data-rank="hard">最难题</button>
+          <button data-rank="popular">人气题</button>
+        </div>
+        <div class="rank-list" id="rankList" style="margin-top: 12px;"></div>
+      </section>
+
+      <section class="view" id="profileView">
+        <div class="section-head"><div><span class="eyebrow">Profile</span><h2>个人中心</h2></div><span id="profileState">未登录</span></div>
+        <article class="card stack">
+          <div class="row">
+            <span class="row-index">你</span>
+            <div><b id="nickname">游客用户</b><small id="profileHint">注册 / 登录后保存历史</small></div>
+            <div class="profile-actions">
+              <button class="mini" type="button" id="profileLogin">登录</button>
+              <button class="mini danger hidden" type="button" id="profileLogout">退出</button>
+            </div>
+          </div>
+          <div class="result-grid">
+            <div class="metric"><strong id="historyScore">--</strong><span>历史成绩</span></div>
+            <div class="metric"><strong id="createdCount">1</strong><span>创建题目</span></div>
+            <div class="metric"><strong id="answeredCount">0</strong><span>回答题目</span></div>
+            <div class="metric"><strong id="ninetyNineRate">99%</strong><span>我的99%</span></div>
+          </div>
+        </article>
+        <div class="section-head"><div><span class="eyebrow">Hidden Match</span><h2>我的99%</h2></div><span>付费解锁</span></div>
+        <div class="profile-list" id="my99List"></div>
+        <div class="section-head"><div><span class="eyebrow">Saved</span><h2>我的题目</h2></div><span>已创建</span></div>
+        <div class="profile-list" id="myQuestions"></div>
+      </section>
+
+      <section class="view" id="disclaimerView">
+        <div class="section-head"><div><span class="eyebrow">Terms</span><h2>免责声明</h2></div><span>原型展示</span></div>
+        <article class="card stack">
+          <p class="analysis-copy">本 H5 为测试产品原型，题目与结果用于轻量互动和自我观察，不构成心理诊断、职业建议、亲密关系建议或任何确定性评价。</p>
+          <p class="analysis-copy">题目由用户共同贡献，平台需要审核不当内容，但不保证每道题都代表专业观点；用户应避免提交隐私、歧视、攻击、违法或侵权内容。</p>
+          <p class="analysis-copy">注册与联系你的方式用于保存进度、历史记录、排行榜和「我的99%」付费解锁演示。生产版本应提供隐私政策、数据删除、授权撤回和支付退款边界。</p>
+          <p class="analysis-copy">付费功能为数字内容服务演示，金额示例为 9.9 元；解锁前应明确展示服务内容、价格、不可保证匹配结果和售后规则。</p>
+        </article>
+      </section>
+
+      <section class="view" id="adminView" hidden>
+        <div class="section-head"><div><span class="eyebrow">Admin</span><h2>题库审核</h2></div><span>后台入口</span></div>
+        <article class="card stack">
+          <div class="result-grid">
+            <div class="metric"><strong>2,418</strong><span>DAU</span></div>
+            <div class="metric"><strong>18%</strong><span>注册转化</span></div>
+            <div class="metric"><strong id="auditCount">0</strong><span>待审核</span></div>
+            <div class="metric"><strong>126</strong><span>分享次数</span></div>
+          </div>
+          <button class="button secondary" type="button" id="refreshWeek">周榜刷新</button>
+        </article>
+        <div class="admin-list" id="auditList" style="margin-top: 12px;"></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="底部导航">
+    <button class="active" type="button" data-go="welcomeView">首页</button>
+    <button type="button" data-go="quizView">答题</button>
+    <button type="button" data-go="leaderboardView">周榜</button>
+    <button type="button" data-go="profileView">我的</button>
+    <button type="button" data-go="disclaimerView">声明</button>
+  </nav>
+
+  <div class="modal" id="loginModal" aria-hidden="true">
+    <div class="sheet">
+      <h3>注册 / 登录</h3>
+      <p>注册后可以保存答题进度、提交题目、参与排行榜、查看历史记录和管理自己的题目。</p>
+      <div class="field contact-field"><label for="contactInput">联系你的方式</label><input id="contactInput" placeholder="手机号 / 微信号 / 邮箱 / 其他" /></div>
+      <div class="login-options">
+        <button class="button dark" type="button" data-login="Apple">Apple 登录</button>
+        <button class="button secondary" type="button" data-login="微信">微信登录</button>
+        <button class="button secondary" type="button" data-login="手机号">手机号登录</button>
+        <button class="button ghost" type="button" id="skipLogin">暂不注册</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="registerDisclaimerModal" aria-hidden="true">
+    <div class="sheet">
+      <h3>注册前请确认</h3>
+      <p>本产品为轻量问答测试原型，题目和结果仅用于互动、自我观察和娱乐参考，不构成心理诊断、职业建议或任何确定性评价。</p>
+      <p>提交题目和注册信息前，请确认不填写敏感隐私、不上传违法或侵权内容，并理解付费解锁为数字内容演示。</p>
+      <button class="button primary" type="button" id="ackRegisterDisclaimer">我已悉知</button>
+    </div>
+  </div>
+
+  <div class="modal" id="profileModal" aria-hidden="true">
+    <div class="sheet">
+      <h3>完善资料</h3>
+      <p>可以填写一个昵称，之后会显示在个人中心和分享卡片里。</p>
+      <div class="field contact-field"><label for="nicknameInput">昵称</label><input id="nicknameInput" placeholder="例如：慢热行星" /></div>
+      <div class="login-options">
+        <button class="button primary" type="button" id="saveProfileInfo">保存资料</button>
+        <button class="button ghost" type="button" id="skipProfileInfo">跳过</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="rulesModal" aria-hidden="true">
+    <div class="sheet">
+      <h3>玩法规则</h3>
+      <p>首页先只显示「开始」。点击「开始」后进入创建题目流程，创建完成并注册后回到首页，首页按钮变为「开始正式答题」。</p>
+      <p>创建题目是首次进入的必要步骤。首页不会提前展示「创建一道题」，创建完成前不能进入正式答题。</p>
+      <p>正式答题共 100 题，注册后可保存进度和历史结果；进度一周内有效，超过一周未完成，本轮进度作废。结果页的人格分析只用于娱乐和自我观察。</p>
+      <button class="button primary" type="button" id="closeRules">我知道了</button>
+    </div>
+  </div>
+
+  <div class="modal" id="posterModal" aria-hidden="true">
+    <div class="sheet">
+      <h3>分享卡片预览</h3>
+      <p>包含头像、昵称、测试成绩、个人画像和体验二维码。</p>
+      <canvas class="poster-preview" id="posterCanvas" width="1080" height="1440"></canvas>
+      <div class="stack" style="margin-top: 12px;">
+        <a class="button primary" id="downloadPoster" download="99-questions-result.png">保存图片</a>
+        <button class="button secondary" type="button" id="closePoster">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="paymentModal" aria-hidden="true">
+    <div class="sheet">
+      <h3>支付解锁</h3>
+      <p id="paymentText">支付 9.9 元后查看这条「我的99%」联系信息。该功能为数字内容演示，不保证匹配关系或后续互动结果。</p>
+      <div class="login-options">
+        <button class="button dark" type="button" id="confirmPayment">确认支付 9.9 元</button>
+        <button class="button ghost" type="button" id="cancelPayment">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const baseQuestions = [
+      ["你认为人生最重要的是什么？", ["金钱", "自由", "爱情", "成就"], "B"],
+      ["如果明天放假，你最想做什么？", ["见朋友", "独处", "旅行", "睡觉"], "B"],
+      ["你更相信哪种选择？", ["计划", "直觉", "经验", "机会"], "B"],
+      ["你在团队里更像哪种角色？", ["组织者", "观察者", "执行者", "创意者"], "D"],
+      ["面对冲突你通常会？", ["直接说清", "先冷静", "让一步", "找人协调"], "B"],
+      ["你更在意关系里的什么？", ["安全感", "新鲜感", "边界感", "陪伴感"], "C"],
+      ["你觉得好的生活应该更接近？", ["稳定", "自由", "热闹", "高效"], "B"],
+      ["你最容易被哪类人吸引？", ["真诚", "聪明", "幽默", "坚定"], "A"],
+      ["你做决定时最怕什么？", ["后悔", "错过", "失控", "麻烦"], "A"],
+      ["你更想拥有哪种能力？", ["表达", "共情", "行动", "专注"], "C"],
+      ["下列哪件事更能让你快乐？", ["被理解", "被认可", "被需要", "被选择"], "A"],
+      ["你怎么看待冒险？", ["必要", "浪漫", "危险", "看情况"], "D"],
+      ["你更愿意把时间花在？", ["学习", "赚钱", "体验", "陪伴"], "C"],
+      ["当别人不理解你时，你会？", ["解释", "沉默", "证明", "离开"], "B"],
+      ["你认为朋友之间最重要的是？", ["忠诚", "松弛", "共同成长", "随时回应"], "B"],
+      ["你更喜欢哪种城市？", ["安静", "繁华", "有海", "有山"], "C"],
+      ["你最难拒绝什么？", ["请求", "机会", "美食", "好奇心"], "D"],
+      ["你如何看待失败？", ["成本", "经验", "打击", "转折"], "B"],
+      ["你更像哪种天气？", ["晴天", "雨天", "大风", "夜雪"], "B"],
+      ["你认为成熟意味着？", ["稳定情绪", "承担责任", "懂得取舍", "保留天真"], "C"]
+    ];
+
+    const QUIZ_TOTAL = 100;
+    const PROGRESS_TTL = 7 * 24 * 60 * 60 * 1000;
+    const progressStoreKey = "qq_registered_progress";
+    const userStoreKey = "qq_registered_user";
+    const confettiStoreKey = "qq_review_confetti_played";
+    const flowVersionKey = "qq_clean_flow_version";
+    const flowVersion = "2026-06-04-start-create-formal-v4";
+    const testShareUrl = "https://web-production-5a977.up.railway.app/prototypes/99-questions-h5.html";
+    const testShareQrImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAAEC0lEQVR4nO1cbY6jMAx1DFJ/gtQD7FHozUZzpL1BOUoPMBL8rBTklZ2Ej5lFaQO7Mw1+P2gLfipFT/Zz0sQQpKHFRCKAMmPAaMQalBkDRiPWoMwYMBqxBmXGgNGINSgzBoxGrEGZOT4h41H6s23tz0FrSjCm5pN9iLp8892mAJNYDGVGQQxo5KUrCKCyIO+IOn/VXWjk3Bh81WcbAx6M2Yf80txOZEw9GHOprE9Ql+puJGqWql70dz4PTOAci1l+OcN5CGAoqa0/+HNhjX+313eiMrN+QvQuVqjm4nUrAZpuMES3E/3Iu30c+ETsEsp8NA9VLJKea1k3lCIY0/wuLEDPh8q6qLmS9NnGgMdituJ7OAVd+hOZS++1ZdgjhY+Dc0fff7cJwBSSQJkxlHKkv5uiuyHOTQT9YHyqmqDPNgY8bG8PcoCxwS+IrjAdQr+vvX1mSsDNGupC9rm6A6ukoqAmYj/EpojjVENZKgGTmbAYRQSnoSktkQjJKQwWVzUPZaYE3F7LLGuDh6hFIEEq4BLPqCYQSamGMlQCJjNL99LWHRnoz1y8pLcPpghCb2+aW2m1t89XCbg1D4FLMjIM5KvaDM2YpcQtqafOUQm42Q8JWDm+oImJJlfB/OxrsN1ay7JUAu7hqUlckG/Oxpask9n60JJpb5+tEnAfT90tWv1ZRhqhvX22SsDd/BB5DfnxRPCiscuD9vb5KQGTmeAVEZz0rIx5/2xh4Ye0t89UCbg9D9nRGUn28dMcMBsfcrpSDWWqBExmwmSApqFEl33GPAR+uMgftJZlqQRMZoJXxJRfRg25bozmA9jTn6p1riM3JWAyE6YK9mV6PkzZT229+qF8lYCb/RBM0/NhxNpPvMLMD6mG8lUCbu/LBAvrLGjEWLvmbBxt1FqWoRJwjzwEfqBRRLOcy+9Cqy+VTv1QjkrAZCZ8HlScZsn8VFkx9vvjQfNQhkrAfXp78n38bHqeMRus1vmybJWAm5kVF7T+xPKRNa0FuUX3FxgMtHVBssTVvLm/XH/33T4PTOA4KDMKWiKst5+aeTuOFHmP5AL1v7BR4EH3/aBrzxt9/JrbaeAEBeAWmRWk+35krIQNzEZyS7dozlrDqxXddVlfZl//dyYAU0jH3vfDgZPRm1jsPuw/xEthQzJ63d/5PDCBc3BmywXtnWsZ64p4Cwe/zIO7fP74k+72YeDjoZ+gzOf3joHCGqgGvlBYaLqzNU0HZFwtqz50vf2jwMPu+0HsfcREQ/h7NfRn3gHkzOIqyLzi70Rl/sd9P0DmOvzGZyC7fbh90Kq7CfNqu3xnAjCFJFDmv3tCRvc4jwBjAatQZgwYjViDMmPAaMQalBkDRiPWoMwYMBqxBmXGgNEIODjzD8cTd/pi1rufAAAAAElFTkSuQmCC";
+    const resultDisclaimer = "本结果基于当前已答题目生成，只适合做轻量自我观察，不代表固定人格结论。";
+    if (localStorage.getItem(flowVersionKey) !== flowVersion) {
+      ["qq_audit", "qq_quiz_unlocked", confettiStoreKey, progressStoreKey, userStoreKey].forEach((key) => localStorage.removeItem(key));
+      localStorage.setItem(flowVersionKey, flowVersion);
+    }
+    const savedUser = JSON.parse(localStorage.getItem(userStoreKey) || "null");
+    const savedProgress = JSON.parse(localStorage.getItem(progressStoreKey) || "null");
+    if (!savedUser) {
+      ["qq_audit", "qq_quiz_unlocked", confettiStoreKey, progressStoreKey].forEach((key) => localStorage.removeItem(key));
+    }
+
+    const appState = {
+      view: "welcomeView",
+      authorAnswer: "",
+      userQuestion: null,
+      quiz: [],
+      current: 0,
+      selected: "",
+      answers: [],
+      loggedIn: !!savedUser,
+      contact: savedUser?.contact || "",
+      nickname: savedUser?.nickname || "",
+      score: null,
+      rankTab: "answer",
+      loginPrompted: false,
+      pendingQuestion: null,
+      pendingPaymentIndex: null,
+      hasAcceptedRegisterDisclaimer: false,
+      quizSaveState: "idle",
+      quizUnlocked: localStorage.getItem("qq_quiz_unlocked") === "true",
+      matchesUnlocked: {},
+      auditPool: JSON.parse(localStorage.getItem("qq_audit") || "[]")
+    };
+
+    function getMineAudit() {
+      return appState.auditPool.find((item) => item.id === "mine" || item.source === "我的题目") || null;
+    }
+
+    function putQuestionInAudit(question) {
+      const item = { ...question, status: "已创建" };
+      appState.userQuestion = item;
+      appState.quizUnlocked = true;
+      localStorage.setItem("qq_quiz_unlocked", "true");
+      localStorage.removeItem(confettiStoreKey);
+      appState.auditPool = [item, ...appState.auditPool.filter((entry) => entry.id !== "mine" && entry.source !== "我的题目")];
+      localStorage.setItem("qq_audit", JSON.stringify(appState.auditPool));
+    }
+
+    function unlockQuizEntry() {
+      appState.quizUnlocked = true;
+      localStorage.setItem("qq_quiz_unlocked", "true");
+      appState.userQuestion = getMineAudit() || appState.userQuestion;
+    }
+
+    function hasSubmittedQuestion() {
+      return !!getMineAudit() || !!appState.userQuestion;
+    }
+
+    function isQuestionApproved() {
+      return hasSubmittedQuestion();
+    }
+
+    function isConfettiPlayed() {
+      return localStorage.getItem(confettiStoreKey) === "true";
+    }
+
+    function resetToInitialFlow() {
+      appState.userQuestion = null;
+      appState.quiz = [];
+      appState.current = 0;
+      appState.selected = "";
+      appState.answers = [];
+      appState.score = null;
+      appState.pendingQuestion = null;
+      appState.pendingPaymentIndex = null;
+      appState.loginPrompted = false;
+      appState.quizSaveState = "guest";
+      appState.quizUnlocked = false;
+      appState.matchesUnlocked = {};
+      appState.auditPool = [];
+      localStorage.removeItem("qq_audit");
+      localStorage.removeItem("qq_quiz_unlocked");
+      localStorage.removeItem(confettiStoreKey);
+    }
+
+    function optionKey(index) { return ["A", "B", "C", "D"][index]; }
+    function getQuestions() {
+      const generated = [];
+      for (let i = 0; i < QUIZ_TOTAL; i += 1) {
+        const base = baseQuestions[i % baseQuestions.length];
+        generated.push({ id: `q${i + 1}`, title: base[0], options: base[1], answer: base[2], source: i < 20 ? "精选题库" : "社区题库" });
+      }
+      const mine = getMineAudit();
+      if (mine) generated[0] = mine;
+      else if (appState.userQuestion) generated[0] = appState.userQuestion;
+      return generated;
+    }
+
+    function showView(id) {
+      if (id === "createView" && hasSubmittedQuestion()) id = "welcomeView";
+      if (id === "quizView" && !appState.quizUnlocked && hasSubmittedQuestion()) unlockQuizEntry();
+      if (id === "quizView" && !appState.quizUnlocked) id = "createView";
+      if (id === "quizView" && !appState.userQuestion && !appState.auditPool.length) id = "createView";
+      appState.view = id;
+      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === id));
+      document.querySelectorAll("[data-go]").forEach((button) => button.classList.toggle("active", button.dataset.go === id));
+      if (id === "quizView" && !appState.quiz.length) startQuiz();
+      if (id === "leaderboardView") renderRanks();
+      if (id === "profileView") renderProfile();
+      if (id === "adminView") renderAdmin();
+      if (id === "disclaimerView") renderProfile();
+      renderHome();
+      renderReviewGate();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function renderHome() {
+      const button = document.getElementById("homePrimary");
+      if (button) button.textContent = hasSubmittedQuestion() ? "开始正式答题" : "开始";
+    }
+
+    function renderReviewGate() {
+      const title = document.getElementById("reviewTitle");
+      const copy = document.getElementById("reviewCopy");
+      const action = document.getElementById("beginQuiz");
+      if (!title || !copy || !action) return;
+      if (!hasSubmittedQuestion()) {
+        title.textContent = "先创建一道题";
+        copy.textContent = "提交一道题并完成注册后，才能进入 100 题正式测试。";
+        action.textContent = "去提交问题";
+        return;
+      }
+      if (appState.quizUnlocked) {
+        title.textContent = "准备开始";
+        copy.textContent = "题目已创建。现在可以进入 100 题正式测试，注册后可保存进度。";
+        action.textContent = "开始正式答题";
+        return;
+      }
+      title.textContent = "问题已创建";
+      copy.textContent = "完成注册后即可进入 100 题正式测试。";
+      action.textContent = "开始正式答题";
+    }
+
+    function playReviewConfettiOnce() {
+      if (isConfettiPlayed()) return;
+      const layer = document.getElementById("confettiLayer");
+      if (!layer) return;
+      const colors = ["#0a84ff", "#ff3b30", "#ffcc00", "#34c759", "#af52de", "#ff9f0a", "#64d2ff", "#ff375f"];
+      layer.innerHTML = Array.from({ length: 40 }, (_, index) => {
+        const x = 4 + Math.random() * 92;
+        const delay = Math.random() * .9;
+        const duration = 2.9 + Math.random() * 1.4;
+        const color = colors[index % colors.length];
+        const width = 7 + Math.random() * 8;
+        const height = 12 + Math.random() * 14;
+        return `<span class="confetti" style="--x:${x}%;--d:${delay.toFixed(2)}s;--dur:${duration.toFixed(2)}s;--c:${color};width:${width.toFixed(0)}px;height:${height.toFixed(0)}px;"></span>`;
+      }).join("");
+      localStorage.setItem(confettiStoreKey, "true");
+      window.setTimeout(() => { layer.innerHTML = ""; }, 5200);
+    }
+
+    function validateQuestion() {
+      const title = document.getElementById("questionTitle").value.trim();
+      const options = ["optionA", "optionB", "optionC", "optionD"].map((id) => document.getElementById(id).value.trim());
+      if (!title || options.some((item) => !item) || !appState.authorAnswer) return null;
+      return { id: "mine", title, options, answer: appState.authorAnswer, source: "我的题目" };
+    }
+
+    function canResumeProgress() {
+      return savedProgress && savedProgress.createdAt && Date.now() - savedProgress.createdAt < PROGRESS_TTL && savedProgress.answers?.length < QUIZ_TOTAL;
+    }
+
+    function saveProgress() {
+      if (!appState.loggedIn) return;
+      localStorage.setItem(progressStoreKey, JSON.stringify({
+        current: appState.current,
+        answers: appState.answers,
+        userQuestion: appState.userQuestion,
+        createdAt: savedProgress?.createdAt || Date.now(),
+        updatedAt: Date.now(),
+        expiresAt: (savedProgress?.createdAt || Date.now()) + PROGRESS_TTL
+      }));
+      appState.quizSaveState = "saved";
+      renderSaveState();
+    }
+
+    function markPendingSave() {
+      appState.quizSaveState = appState.loggedIn ? "pending" : "guest";
+      renderSaveState();
+    }
+
+    function renderSaveState() {
+      const button = document.getElementById("saveQuiz");
+      if (!button) return;
+      if (!appState.loggedIn) {
+        button.textContent = "注册后保存";
+        document.getElementById("savedCount").textContent = "未注册不保存";
+        return;
+      }
+      button.textContent = appState.quizSaveState === "saved" ? "已保存" : "待保存";
+      const label = appState.quizSaveState === "saved" ? `已保存 · 7天内有效` : "待保存";
+      document.getElementById("savedCount").textContent = label;
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById("toast");
+      toast.textContent = text;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    function startQuiz(resume = true) {
+      appState.quiz = getQuestions();
+      if (resume && appState.loggedIn && canResumeProgress()) {
+        appState.userQuestion = savedProgress.userQuestion || appState.userQuestion;
+        appState.answers = savedProgress.answers || [];
+        appState.current = savedProgress.current || appState.answers.length;
+      } else {
+        appState.current = 0;
+        appState.answers = [];
+      }
+      appState.selected = "";
+      renderQuiz();
+    }
+
+    function renderQuiz() {
+      const item = appState.quiz[appState.current];
+      if (!item) return;
+      const step = appState.current + 1;
+      document.getElementById("questionIndex").textContent = `第${step}题 / ${QUIZ_TOTAL}题`;
+      renderSaveState();
+      document.getElementById("progressBar").style.width = `${(appState.current / QUIZ_TOTAL) * 100}%`;
+      document.getElementById("questionSource").textContent = item.source;
+      document.getElementById("quizTitle").textContent = item.title;
+      document.getElementById("optionList").innerHTML = item.options.map((option, index) => {
+        const key = optionKey(index);
+        return `<button class="option ${appState.selected === key ? "active" : ""}" type="button" data-option="${key}"><b>${key}</b><span>${option}</span></button>`;
+      }).join("");
+      document.querySelectorAll("[data-option]").forEach((button) => {
+        button.addEventListener("click", () => {
+          appState.selected = button.dataset.option;
+          markPendingSave();
+          document.getElementById("nextQuestion").disabled = false;
+          renderQuiz();
+        });
+      });
+      document.getElementById("nextQuestion").disabled = !appState.selected;
+      if (step === 10 && !appState.loggedIn && !appState.loginPrompted) {
+        appState.loginPrompted = true;
+        setTimeout(openLogin, 250);
+      }
+    }
+
+    function finishQuiz() {
+      const total = Math.max(appState.answers.length, 1);
+      const correct = appState.answers.filter((answer) => answer.selected === answer.correct).length;
+      const accuracy = Math.round((correct / total) * 100);
+      const match = Math.max(42, Math.min(88, Math.round(58 + accuracy * .32)));
+      const unique = Math.max(36, Math.min(96, 100 - match + 42));
+      const tags = [];
+      if (unique >= 70) tags.push("独立思考");
+      if (match >= 65) tags.push("共识敏感");
+      if (accuracy >= 70) tags.push("价值清晰");
+      tags.push(accuracy >= 60 ? "探索型人格" : "反标准答案");
+      const summary = buildAnalysisSummary({ accuracy, match, unique, tags, total });
+      appState.score = { accuracy, match, unique, tags, answered: total, summary };
+      localStorage.removeItem(progressStoreKey);
+      renderResult();
+      showView("resultView");
+      if (!appState.loggedIn) setTimeout(openLogin, 350);
+    }
+
+    function buildAnalysisSummary(result) {
+      const topChoices = appState.answers.reduce((memo, item) => {
+        memo[item.selected] = (memo[item.selected] || 0) + 1;
+        return memo;
+      }, {});
+      const dominant = Object.entries(topChoices).sort((a, b) => b[1] - a[1])[0]?.[0] || "B";
+      const style = dominant === "B" ? "你在多数情境里优先选择自由、边界和自我节奏" : dominant === "A" ? "你更重视稳定、确定性和关系里的基础安全" : dominant === "C" ? "你倾向用体验、情绪和关系质量判断问题" : "你更容易被机会、变化和开放答案吸引";
+      const social = result.match >= 70 ? "你的答案和大众样本有较高重合，说明你对公共语境和群体感受比较敏锐。" : "你的答案和大众样本保持距离，说明你更愿意保留独立判断，不急于选择标准答案。";
+      const risk = result.unique >= 70 ? "独特指数偏高会让你在人群里更容易被记住，也意味着你需要更清楚地表达自己的真实动机。" : "独特指数适中，你通常能在自我表达和群体协调之间取得平衡。";
+      return `${style}。${social}${risk}`;
+    }
+
+    function renderResult() {
+      const result = appState.score || { accuracy: 78, match: 65, unique: 92, tags: ["理想主义", "自由导向", "独立思考", "探索型人格"], answered: QUIZ_TOTAL, summary: "你在关系、选择和价值判断里更重视自由和自我解释权，同时保留对他人感受的观察。这个画像会随着答题样本变化而变化。" };
+      document.getElementById("scoreRing").style.setProperty("--score", `${result.accuracy}%`);
+      document.getElementById("scoreText").textContent = `${result.accuracy}%`;
+      document.getElementById("matchRate").textContent = `${result.match}%`;
+      document.getElementById("uniqueRate").textContent = `${result.unique}%`;
+      document.getElementById("profileTags").innerHTML = result.tags.map((tag) => `<span class="tag">${tag}</span>`).join("");
+      document.getElementById("resultMeta").textContent = `已答 ${result.answered} 题`;
+      document.getElementById("analysisSummary").textContent = result.summary;
+      document.getElementById("saveResult").classList.toggle("hidden", appState.loggedIn);
+    }
+
+    function renderRanks() {
+      const data = {
+        answer: [["林间电台", "正确率 92% · 100题 · 08:21"], ["慢热行星", "正确率 88% · 100题 · 09:14"], ["游客用户", "正确率 78% · 86题 · 10:02"]],
+        contribute: [["空白格", "回答 12,804 · 赞 420"], ["纸飞机", "回答 8,102 · 收藏 316"], ["低速观察", "回答 6,728 · 赞 281"]],
+        hard: [["你会原谅一次背叛吗？", "正确率 18%"], ["自由和安全选哪个？", "正确率 22%"], ["你相信长期承诺吗？", "正确率 25%"]],
+        popular: [["人生最重要的是什么？", "浏览 24,819 · 收藏 1,102"], ["你会为了喜欢的人搬家吗？", "浏览 18,030 · 赞 912"], ["一个人旅行算孤独吗？", "浏览 16,441 · 收藏 776"]]
+      };
+      document.querySelectorAll("[data-rank]").forEach((tab) => tab.classList.toggle("active", tab.dataset.rank === appState.rankTab));
+      document.getElementById("rankList").innerHTML = data[appState.rankTab].map((row, index) => `
+        <div class="row"><span class="row-index">${index + 1}</span><div><b>${row[0]}</b><small>${row[1]}</small></div><span class="pill">${appState.rankTab === "answer" ? "本周" : "热度"}</span></div>
+      `).join("");
+    }
+
+    function renderProfile() {
+      document.getElementById("profileState").textContent = appState.loggedIn ? "已注册" : "未注册";
+      document.getElementById("rulesButton").textContent = "玩法规则";
+      document.getElementById("nickname").textContent = appState.loggedIn ? (appState.nickname || "轻量测试员") : "游客用户";
+      document.getElementById("profileHint").textContent = appState.loggedIn ? `联系你的方式：${appState.contact}` : "注册 / 登录后保存历史";
+      document.getElementById("profileLogin").classList.toggle("hidden", appState.loggedIn);
+      document.getElementById("profileLogout").classList.toggle("hidden", !appState.loggedIn);
+      document.getElementById("historyScore").textContent = appState.score ? `${appState.score.accuracy}%` : "--";
+      document.getElementById("answeredCount").textContent = appState.score ? String(appState.score.answered) : String(appState.answers.length);
+      document.getElementById("createdCount").textContent = String(appState.auditPool.length);
+      document.getElementById("ninetyNineRate").textContent = appState.score ? "99%" : "--";
+      renderMy99();
+      document.getElementById("myQuestions").innerHTML = appState.auditPool.length
+        ? appState.auditPool.map((item) => `
+          <div class="row"><span class="row-index">Q</span><div><b>${item.title}</b><small>${item.status || "已创建"} · 已加入我的题目</small></div><span class="pill">我的题目</span></div>
+        `).join("")
+        : `<div class="card"><span class="success">完成创建后，你的问题会出现在这里。</span></div>`;
+    }
+
+    function renderMy99() {
+      const matches = appState.score ? [
+        { name: "同频用户 A", contact: "WeChat: q99-same-042", basis: "答完相同题目 · 结果一致 99%" },
+        { name: "同频用户 B", contact: "Phone: 138****9921", basis: "答完相同题目 · 结果一致 99%" }
+      ] : [];
+      document.getElementById("my99List").innerHTML = matches.length ? matches.map((item, index) => {
+        const unlocked = appState.matchesUnlocked[index];
+        return `<div class="row match-card"><span class="row-index">99</span><div><b>${item.name}</b><small>${item.basis}</small><small class="${unlocked ? "" : "blurred-contact"}">${unlocked ? item.contact : "WeChat: q99-same-042"}</small></div><button class="mini" type="button" data-unlock99="${index}">${unlocked ? "已解锁" : "9.9元"}</button></div>`;
+      }).join("") : `<div class="card"><span class="success">完成测试后，如果有人与你答完相同题目且结果一致，这里会出现「我的99%」。</span></div>`;
+      document.querySelectorAll("[data-unlock99]").forEach((button) => {
+        button.addEventListener("click", () => {
+          appState.pendingPaymentIndex = button.dataset.unlock99;
+          document.getElementById("paymentModal").classList.add("open");
+          document.getElementById("paymentModal").setAttribute("aria-hidden", "false");
+        });
+      });
+    }
+
+    function renderAdmin() {
+      document.getElementById("auditCount").textContent = String(appState.auditPool.length);
+      document.getElementById("auditList").innerHTML = appState.auditPool.length ? appState.auditPool.map((item, index) => `
+        <div class="row">
+          <span class="row-index">${index + 1}</span>
+          <div><b>${item.title}</b><small>A ${item.options[0]} / B ${item.options[1]} / C ${item.options[2]} / D ${item.options[3]} · 题主答案 ${item.answer}</small></div>
+          <div class="row-action"><button class="mini" type="button" data-approve="${index}">通过</button><button class="mini danger" type="button" data-reject="${index}">驳回</button></div>
+        </div>
+      `).join("") : `<div class="card"><span class="success">暂无待审核题目。用户提交后会出现在这里。</span></div>`;
+      document.querySelectorAll("[data-approve]").forEach((button) => button.addEventListener("click", () => updateAudit(Number(button.dataset.approve), "已通过")));
+      document.querySelectorAll("[data-reject]").forEach((button) => button.addEventListener("click", () => updateAudit(Number(button.dataset.reject), "已驳回")));
+    }
+
+    function updateAudit(index, status) {
+      appState.auditPool[index].status = status;
+      if (appState.auditPool[index].id === "mine" || appState.auditPool[index].source === "我的题目") {
+        appState.userQuestion = appState.auditPool[index];
+        if (status !== "已通过") {
+          appState.quizUnlocked = false;
+          localStorage.setItem("qq_quiz_unlocked", "false");
+        }
+      }
+      localStorage.setItem("qq_audit", JSON.stringify(appState.auditPool));
+      renderAdmin();
+      renderProfile();
+      renderHome();
+      renderReviewGate();
+      showToast(status === "已通过" ? "审核通过" : "题目已驳回。");
+    }
+
+    function openRegisterDisclaimer() {
+      document.getElementById("registerDisclaimerModal").classList.add("open");
+      document.getElementById("registerDisclaimerModal").setAttribute("aria-hidden", "false");
+    }
+
+    function closeRegisterDisclaimer() {
+      document.getElementById("registerDisclaimerModal").classList.remove("open");
+      document.getElementById("registerDisclaimerModal").setAttribute("aria-hidden", "true");
+    }
+
+    function requestLogin() {
+      if (!appState.hasAcceptedRegisterDisclaimer) {
+        openRegisterDisclaimer();
+        return;
+      }
+      openLogin();
+    }
+
+    function openLogin() {
+      document.getElementById("loginModal").classList.add("open");
+      document.getElementById("loginModal").setAttribute("aria-hidden", "false");
+    }
+
+    function closeLogin() {
+      document.getElementById("loginModal").classList.remove("open");
+      document.getElementById("loginModal").setAttribute("aria-hidden", "true");
+    }
+
+    function openProfileModal() {
+      document.getElementById("profileModal").classList.add("open");
+      document.getElementById("profileModal").setAttribute("aria-hidden", "false");
+      document.getElementById("nicknameInput").value = appState.nickname || "";
+    }
+
+    function closeProfileModal() {
+      document.getElementById("profileModal").classList.remove("open");
+      document.getElementById("profileModal").setAttribute("aria-hidden", "true");
+    }
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+      const chars = Array.from(text);
+      let line = "";
+      const lines = [];
+      chars.forEach((char) => {
+        const testLine = `${line}${char}`;
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+          lines.push(line);
+          line = char;
+        } else {
+          line = testLine;
+        }
+      });
+      if (line) lines.push(line);
+      lines.forEach((item, index) => ctx.fillText(item, x, y + index * lineHeight));
+      return y + lines.length * lineHeight;
+    }
+
+    function drawPoster() {
+      const result = appState.score || { accuracy: 78, match: 65, unique: 92, tags: ["理想主义", "自由导向", "独立思考", "探索型人格"], answered: QUIZ_TOTAL, summary: "你在关系、选择和价值判断里更重视自由和自我解释权，同时保留对他人感受的观察。" };
+      const canvas = document.getElementById("posterCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0,0,1080,1440);
+      ctx.fillStyle = "#f6f6f7";
+      ctx.fillRect(0,0,1080,1440);
+      ctx.fillStyle = "#111";
+      ctx.font = "900 84px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("99个问题", 88, 146);
+      ctx.font = "500 34px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#777a80";
+      ctx.fillText("用100道题认识自己，也认识别人", 88, 204);
+
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.roundRect(72, 286, 936, 470, 38); ctx.fill();
+      ctx.fillStyle = "#111";
+      ctx.font = "900 150px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(`${result.accuracy}%`, 118, 454);
+      ctx.font = "800 36px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("正确率", 128, 510);
+      ctx.fillStyle = "#777a80";
+      ctx.font = "600 34px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(`大众一致率 ${result.match}%`, 128, 596);
+      ctx.fillText(`独特指数 ${result.unique}%`, 128, 656);
+
+      ctx.fillStyle = "#111";
+      ctx.font = "900 40px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("个人画像", 88, 812);
+      let x = 88, y = 862;
+      result.tags.forEach((tag) => {
+        const width = ctx.measureText(tag).width + 44;
+        ctx.fillStyle = "#111";
+        ctx.beginPath(); ctx.roundRect(x, y, width, 62, 31); ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "800 28px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(tag, x + 22, y + 41);
+        x += width + 14;
+        if (x > 780) { x = 88; y += 78; }
+      });
+
+      ctx.fillStyle = "#111";
+      ctx.font = "900 34px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("人格分析总结", 88, 1048);
+      ctx.fillStyle = "#555";
+      ctx.font = "500 28px -apple-system, BlinkMacSystemFont, sans-serif";
+      wrapCanvasText(ctx, result.summary || "", 88, 1092, 640, 42);
+
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.roundRect(760, 1048, 190, 190, 24); ctx.fill();
+      ctx.fillStyle = "#111";
+      ctx.font = "900 36px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("扫码一起测试", 88, 1266);
+      ctx.fillStyle = "#777a80";
+      ctx.font = "500 28px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("轻量问答测试社区 · H5 MVP", 88, 1316);
+      ctx.font = "500 22px -apple-system, BlinkMacSystemFont, sans-serif";
+      wrapCanvasText(ctx, resultDisclaimer, 88, 1364, 880, 30);
+      const qr = new Image();
+      qr.onload = () => {
+        ctx.drawImage(qr, 778, 1066, 154, 154);
+        document.getElementById("downloadPoster").href = canvas.toDataURL("image/png");
+      };
+      qr.src = testShareQrImage;
+      document.getElementById("downloadPoster").href = canvas.toDataURL("image/png");
+    }
+
+    document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.go)));
+    document.getElementById("homePrimary").addEventListener("click", () => {
+      if (!hasSubmittedQuestion()) {
+        showView("createView");
+        return;
+      }
+      unlockQuizEntry();
+      showView("quizView");
+    });
+    document.querySelectorAll("#authorAnswerPicker button").forEach((button) => {
+      button.addEventListener("click", () => {
+        appState.authorAnswer = button.dataset.answer;
+        document.querySelectorAll("#authorAnswerPicker button").forEach((item) => item.classList.toggle("active", item === button));
+      });
+    });
+    document.getElementById("fillExample").addEventListener("click", () => {
+      document.getElementById("questionTitle").value = "你认为人生最重要的是什么？";
+      document.getElementById("optionA").value = "金钱";
+      document.getElementById("optionB").value = "自由";
+      document.getElementById("optionC").value = "爱情";
+      document.getElementById("optionD").value = "成就";
+      appState.authorAnswer = "B";
+      document.querySelectorAll("#authorAnswerPicker button").forEach((item) => item.classList.toggle("active", item.dataset.answer === "B"));
+    });
+    document.getElementById("questionForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const question = validateQuestion();
+      if (!question) {
+        document.getElementById("createError").textContent = "请填写问题、4个选项，并选择题主答案。";
+        return;
+      }
+      document.getElementById("createError").textContent = "";
+      if (!appState.loggedIn) {
+        appState.pendingQuestion = question;
+        openRegisterDisclaimer();
+        return;
+      }
+      putQuestionInAudit(question);
+      unlockQuizEntry();
+      showView("welcomeView");
+      showToast("题目已创建，可以开始正式答题。");
+    });
+    document.getElementById("beginQuiz").addEventListener("click", () => {
+      if (!hasSubmittedQuestion()) {
+        showView("createView");
+        return;
+      }
+      if (!isQuestionApproved()) {
+        showToast("请先创建一道题。");
+        renderReviewGate();
+        return;
+      }
+      if (!appState.quizUnlocked) {
+        playReviewConfettiOnce();
+        appState.quizUnlocked = true;
+        localStorage.setItem("qq_quiz_unlocked", "true");
+        appState.userQuestion = getMineAudit() || appState.userQuestion;
+        renderHome();
+        renderReviewGate();
+        showToast("可以开始正式答题。");
+        return;
+      }
+      startQuiz(false);
+      showView("quizView");
+    });
+    document.getElementById("nextQuestion").addEventListener("click", () => {
+      const item = appState.quiz[appState.current];
+      appState.answers.push({ questionId: item.id, selected: appState.selected, correct: item.answer });
+      appState.current += 1;
+      appState.selected = "";
+      markPendingSave();
+      if (appState.current >= QUIZ_TOTAL) finishQuiz();
+      else renderQuiz();
+    });
+    document.getElementById("saveQuiz").addEventListener("click", () => {
+      if (!appState.loggedIn) {
+        requestLogin();
+        return;
+      }
+      saveProgress();
+      showToast("当前答题进度已保存。");
+    });
+    document.getElementById("finishNow").addEventListener("click", () => {
+      while (appState.answers.length < Math.max(20, appState.current + 1)) {
+        const item = appState.quiz[appState.answers.length] || getQuestions()[appState.answers.length % QUIZ_TOTAL];
+        appState.answers.push({ questionId: item.id, selected: Math.random() > .28 ? item.answer : "A", correct: item.answer });
+      }
+      finishQuiz();
+    });
+    document.querySelectorAll("[data-login]").forEach((button) => button.addEventListener("click", () => {
+      const contact = document.getElementById("contactInput").value.trim();
+      if (!contact) {
+        document.getElementById("contactInput").focus();
+        document.getElementById("contactInput").style.borderColor = "var(--danger)";
+        return;
+      }
+      appState.loggedIn = true;
+      appState.contact = contact;
+      localStorage.setItem(userStoreKey, JSON.stringify({ loginType: button.dataset.login, contact, nickname: appState.nickname, createdAt: Date.now() }));
+      saveProgress();
+      closeLogin();
+      if (appState.pendingQuestion) {
+        putQuestionInAudit(appState.pendingQuestion);
+        unlockQuizEntry();
+        appState.pendingQuestion = null;
+        showView("welcomeView");
+      }
+      openProfileModal();
+      if (appState.view === "quizView") renderQuiz();
+      renderProfile();
+    }));
+    document.getElementById("skipLogin").addEventListener("click", () => {
+      closeLogin();
+      showToast("注册后才能提交问题或保存进度。");
+    });
+    document.getElementById("saveResult").addEventListener("click", requestLogin);
+    document.getElementById("profileLogin").addEventListener("click", requestLogin);
+    document.getElementById("profileLogout").addEventListener("click", () => {
+      appState.loggedIn = false;
+      appState.contact = "";
+      appState.nickname = "";
+      resetToInitialFlow();
+      localStorage.removeItem(userStoreKey);
+      localStorage.removeItem(progressStoreKey);
+      closeLogin();
+      closeProfileModal();
+      showView("welcomeView");
+      renderProfile();
+      renderHome();
+      renderReviewGate();
+      showToast("已退出登录。");
+    });
+    document.getElementById("ackRegisterDisclaimer").addEventListener("click", () => {
+      appState.hasAcceptedRegisterDisclaimer = true;
+      closeRegisterDisclaimer();
+      openLogin();
+    });
+    document.getElementById("saveProfileInfo").addEventListener("click", () => {
+      const nickname = document.getElementById("nicknameInput").value.trim();
+      if (nickname) appState.nickname = nickname;
+      localStorage.setItem(userStoreKey, JSON.stringify({ loginType: "registered", contact: appState.contact, nickname: appState.nickname, createdAt: Date.now() }));
+      closeProfileModal();
+      renderProfile();
+      showToast("资料已保存。");
+    });
+    document.getElementById("skipProfileInfo").addEventListener("click", () => {
+      closeProfileModal();
+      showToast("已跳过资料填写。");
+    });
+    document.getElementById("openPoster").addEventListener("click", () => {
+      drawPoster();
+      document.getElementById("posterModal").classList.add("open");
+      document.getElementById("posterModal").setAttribute("aria-hidden", "false");
+    });
+    document.getElementById("closePoster").addEventListener("click", () => {
+      document.getElementById("posterModal").classList.remove("open");
+      document.getElementById("posterModal").setAttribute("aria-hidden", "true");
+    });
+    document.getElementById("rankTabs").addEventListener("click", (event) => {
+      if (!event.target.dataset.rank) return;
+      appState.rankTab = event.target.dataset.rank;
+      renderRanks();
+    });
+    document.getElementById("refreshWeek").addEventListener("click", () => {
+      showToast("周榜已按周一 00:00 口径刷新。");
+    });
+    document.getElementById("rulesButton").addEventListener("click", () => {
+      document.getElementById("rulesModal").classList.add("open");
+      document.getElementById("rulesModal").setAttribute("aria-hidden", "false");
+    });
+    document.getElementById("closeRules").addEventListener("click", () => {
+      document.getElementById("rulesModal").classList.remove("open");
+      document.getElementById("rulesModal").setAttribute("aria-hidden", "true");
+    });
+    document.getElementById("confirmPayment").addEventListener("click", () => {
+      if (appState.pendingPaymentIndex !== null) {
+        appState.matchesUnlocked[appState.pendingPaymentIndex] = true;
+        appState.pendingPaymentIndex = null;
+        document.getElementById("paymentModal").classList.remove("open");
+        document.getElementById("paymentModal").setAttribute("aria-hidden", "true");
+        renderMy99();
+        showToast("支付完成，联系信息已解锁。");
+      }
+    });
+    document.getElementById("cancelPayment").addEventListener("click", () => {
+      appState.pendingPaymentIndex = null;
+      document.getElementById("paymentModal").classList.remove("open");
+      document.getElementById("paymentModal").setAttribute("aria-hidden", "true");
+    });
+    renderRanks();
+    renderProfile();
+    renderAdmin();
+    renderResult();
+    renderHome();
+    renderReviewGate();
+  </script>
+</body>
+</html>
