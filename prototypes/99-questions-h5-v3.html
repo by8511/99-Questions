@@ -699,8 +699,8 @@
     const confettiStoreKey = "qq_review_confetti_played";
     const flowVersionKey = "qq_clean_flow_version";
     const flowVersion = "2026-06-04-start-create-formal-v4";
-    const testShareUrl = "https://web-production-5a977.up.railway.app/prototypes/99-questions-h5-v3.html";
-    const testShareQrImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQMAAABG1lsGAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAC3ElEQVR4nO2cMXLrMAxEmXGhUkfQUXg06Wg6io7g0oUn+AKwIKlkkpmfjuKiiG0YT2m8A4CAlNKfbZVq58dFX4+UPuSZMrwPf31eYjeSJPsk3/Hbz5Im9b1PfPvw71/+1ekwdXxG7EKS5Ijk7BrKrjL3K7kj7OHXM3Ly65EkeQtyOlOKtKZakaImkiRJFpWZqA5/kzWNZAjMajCSJO9Awr5XUhq461f/XYORJHlDUqp5XgH5VJUp6Y7H7709SZK3J7/Yot5DT7OkqMxSlJK/GkmSXZDx+8dxbe06noqj61g028yqoFc0JyRJDkfCpRoy0g6v4EgpBh6CfiV5mESnQ5JkZ6QHIublqrD+Yvb4vQTO+kf7EmiFJMnBSLUVMUqGymzWgRpMvOtI7rBsQ5Jkp+QjlCBluofj2tzOs8v1ROL/kSQ5FmmBmkaQQZoaDAsgZjYSwfntJOVMiiTJYcjLXHDymOW6J4VB4dzkKXWQJNklCS2gIV/0PQJ3fcmNY8MhlWcbkiTHJNWcLEsiWVWWS8mFDn3/qjKSJHsifWyH81t06Eez5ZGbNmT1xamowUiSHI8MUWkGESxOlSbDizJ7e5nukSTZJZkicG8+pWbbqXYdIm0lRZLkcOQc0z3v0GHPEJXvfojnkrYGI0lyKHI1F5ZEzGW36lkyas9vJbylBiNJskvy3Wil2IpQSyNWlDUrIqEVkiTHI8XPb0VKI1J2CpPXYCu6mCmuR5Jk36Ta+XEpR1BSY6KSasM2kiQHIy9Wn2Vg1Rbu7BavzFClSdzZTZJkj+TaigCt9yIVR7ZZMbGYahhJkoOR7bMMkFdMfbPfrVrtm8pIkhyNvO4U+mmW2t7crbpVr+MkSd6CPDDMwxNlMbGIo6vLszNJkhydNK/fdJHKJHzFpuGrNDAkSfZKwiKvmDVPlDV5bCnVDqVohSTJkUipFnlFtOHAWhR6Ece9KEs/9fYkSd6Z/LP9A4elaV5eoGvaAAAAAElFTkSuQmCC";
+    const getTestShareUrl = () => `${window.location.origin}${window.location.pathname}`;
+    const getTestShareQrImage = () => `https://api.qrserver.com/v1/create-qr-code/?size=328x328&margin=0&data=${encodeURIComponent(getTestShareUrl())}`;
     const resultDisclaimer = "本结果基于当前已答题目生成，只适合做轻量自我观察，不代表固定人格结论。";
     if (localStorage.getItem(flowVersionKey) !== flowVersion) {
       ["qq_audit", "qq_quiz_unlocked", confettiStoreKey, progressStoreKey, userStoreKey].forEach((key) => localStorage.removeItem(key));
@@ -1198,7 +1198,8 @@
         ctx.drawImage(qr, 778, 1066, 154, 154);
         document.getElementById("downloadPoster").href = canvas.toDataURL("image/png");
       };
-      qr.src = testShareQrImage;
+      qr.crossOrigin = "anonymous";
+      qr.src = getTestShareQrImage();
       document.getElementById("downloadPoster").href = canvas.toDataURL("image/png");
     }
 
